@@ -5,12 +5,18 @@
  */
 package lendle.courses.network.loginws;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import static java.sql.DriverManager.println;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -35,11 +41,25 @@ public class LoginsServlet extends HttpServlet {
     
     
     private void service1(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
-        response.setContentType("text/plain;charset=UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
         try (PrintWriter out=response.getWriter(); Connection conn=DriverManager.getConnection("jdbc:derby://localhost:1527/sample", "app", "app")) {
             //select from login
             //output in id:password style
-            
+            List list = new Vector(); //長出一個vector
+            Statement stmt = conn.createStatement(); 
+            ResultSet rs = stmt.executeQuery("select * from login");
+            while(rs.next()){
+                String id = rs.getString("ID"); 
+                String pass = rs.getString("PASSWORD");              
+                Map map = new HashMap();    //用Hash的方式建立
+                map.put("id",id);
+                map.put("password", pass);
+                list.add(map);
+            }
+            //建立gson
+            Gson gson = new Gson();
+            String json = gson.toJson(list);
+            out.println(json);
             //////////////////////////////
         }catch(Exception e){
             throw new ServletException(e);

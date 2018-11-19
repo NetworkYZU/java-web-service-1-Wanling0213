@@ -5,10 +5,15 @@
  */
 package lendle.courses.network.loginws;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -32,12 +37,23 @@ public class LoginInfoServlet extends HttpServlet {
     }
     
     private void getImpl1(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
-        response.setContentType("text/plain;charset=UTF-8");
+        response.setContentType("application/json");
         try (PrintWriter out=response.getWriter(); Connection conn=DriverManager.getConnection("jdbc:derby://localhost:1527/sample", "app", "app")) {
             //select from login
             //output in id:password style
             //this time, consider the id parameter
             String id=request.getParameter("id");
+            PreparedStatement pstmt = conn.prepareStatement("select * from login where id=?");
+            pstmt.setString(1, id); //第一個問號後面的value
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()){
+                Map map = new HashMap();
+                map.put("id",rs.getString("ID"));
+                map.put("password", rs.getString("PASSWORD"));
+                out.print(new Gson().toJson(map));
+            }else{
+            response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+            }
             
             //////////////////////////////
         }catch(Exception e){
@@ -108,8 +124,11 @@ public class LoginInfoServlet extends HttpServlet {
             //insert the corresponding user
             String id=request.getParameter("id");
             String password=request.getParameter("password");
-            //////////////////////////////
-            out.println("success");
+            PreparedStatement pstmt = conn.prepareStatement("insert into login (ID,PASSWORD) values(?,?)");
+            pstmt.setString(1, id); //第一個問號後面的value
+            pstmt.setString(2, password); //第一個問號後面的value
+            int ret = pstmt.executeUpdate();
+            out.println(ret);
         }catch(Exception e){
             throw new ServletException(e);
         }
