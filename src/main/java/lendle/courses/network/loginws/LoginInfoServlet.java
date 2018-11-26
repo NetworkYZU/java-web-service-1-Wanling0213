@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -95,10 +96,14 @@ public class LoginInfoServlet extends HttpServlet {
         response.setContentType("text/plain;charset=UTF-8");
         try (PrintWriter out=response.getWriter(); Connection conn=DriverManager.getConnection("jdbc:derby://localhost:1527/sample", "app", "app")) {
             //update the corresponding user
+            Statement stmt = conn.createStatement();
             String id=request.getParameter("id");
             String password=request.getParameter("password");
             //////////////////////////////
-            out.println("success");
+            stmt.executeUpdate("update login set password='"+password+"' where id='"+id+"'");
+
+
+
         }catch(Exception e){
             throw new ServletException(e);
         }
@@ -110,8 +115,11 @@ public class LoginInfoServlet extends HttpServlet {
         try (PrintWriter out=response.getWriter(); Connection conn=DriverManager.getConnection("jdbc:derby://localhost:1527/sample", "app", "app")) {
             //delete the corresponding user
             String id=request.getParameter("id");
+            PreparedStatement stmt = conn.prepareStatement("delete from login where id=?");
+            stmt.setString(1, id);
             //////////////////////////////
-            out.println("success");
+            int ret = stmt.executeUpdate();
+            out.println(ret);
         }catch(Exception e){
             throw new ServletException(e);
         }
@@ -125,8 +133,8 @@ public class LoginInfoServlet extends HttpServlet {
             String id=request.getParameter("id");
             String password=request.getParameter("password");
             PreparedStatement pstmt = conn.prepareStatement("insert into login (ID,PASSWORD) values(?,?)");
-            pstmt.setString(1, id); //第一個問號後面的value
-            pstmt.setString(2, password); //第一個問號後面的value
+            pstmt.setString(1, id); //第1個問號後面的value
+            pstmt.setString(2, password); //第2個問號後面的value
             int ret = pstmt.executeUpdate();
             out.println(ret);
         }catch(Exception e){
