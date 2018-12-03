@@ -9,34 +9,28 @@
         <link href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
         <script>
             var model = null;
-            $(document).ready(function(){
-                model = new Vue({
-                    "el":"#dlg",
-                    "data":{
-                        "login": {}
-                    },
-                });
-            });
-            function query(){
-               $.ajax("login_info",{
-                    "data":{
-                      "id":$("#qid").val()
-                    },
-                    "success":function(d){
-                        console.log(d);
-                        model.login=d;
-                }
-                }); 
-            }
+            
             
         </script>
     </head>
     <body>
-        ID:<input type="text" id="qid"/>
-        <input type="button" value="Query" onclick="query();"/><br/>
-        <div id ="dlg">
-            id:<input type="text" v-model="login.id"/><br/>
-            password:<input type="text"v-model="login.password"/>
-        </div>
+        <table id="app" border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Password</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="login in logins">
+                    <th>{{login.id}}</th>
+                    <th>{{login.password}}</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </tbody>
+        </table>
     </body>
 </html>
