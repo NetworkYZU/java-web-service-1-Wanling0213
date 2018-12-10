@@ -9,7 +9,23 @@
         <link href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
         <script>
             var model = null;
-            
+            $(document).ready(function(){
+                $.ajax("logins",{
+                    success:function(data){
+                        model = new Vue({
+                            el:"#app",
+                            data:{
+                                logins:data
+                            },
+                            methods:{
+                                deleteLogin:function(i){
+                                    model.logins.splice(i,1);//從第i個位置開始刪除,連續刪除一筆
+                                }
+                            }
+                        });
+                    }
+                });
+            });
             
         </script>
     </head>
@@ -17,6 +33,7 @@
         <table id="app" border="1">
             <thead>
                 <tr>
+                    <th></th>
                     <th>ID</th>
                     <th>Password</th>
                     <th></th>
@@ -24,11 +41,12 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="login in logins">
-                    <th>{{login.id}}</th>
-                    <th>{{login.password}}</th>
-                    <th></th>
-                    <th></th>
+                <tr v-for="(login,index) in logins">
+                    <td>{{index}}</td>
+                    <td>{{login.id}}</td>
+                    <td>{{login.password}}</td>
+                    <td><button v-on:click="deleteLogin(index)">Delete</button></td>
+                    <td></td>
                 </tr>
             </tbody>
         </table>
