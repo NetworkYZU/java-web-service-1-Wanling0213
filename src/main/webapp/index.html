@@ -9,27 +9,95 @@
         <link href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
         <script>
             var model = null;
-            $(document).ready(function(){
-                $.ajax("logins",{
-                    success:function(data){
+            var dlgmodel = null;
+
+            $(document).ready(function () {
+                dlgmodel = new Vue({
+                    el: "#dlg",
+                    data: {
+                        id: "",
+                        password: ""
+                    }
+                });
+                $.ajax("logins", {
+                    success: function (data) {
                         model = new Vue({
-                            el:"#app",
-                            data:{
-                                logins:data
+                            el: "#app",
+                            data: {
+                                logins: data
                             },
-                            methods:{
-                                deleteLogin:function(i){
-                                    model.logins.splice(i,1);//從第i個位置開始刪除,連續刪除一筆
+                            methods: {
+                                deleteLogin: function (i) {
+                                    $.ajax("login_info?id=" + model.logins[i].id, {
+                                        type: "DELETE",
+                                        success: function (d) {
+                                            model.logins.splice(i, 1);//從第i個位置開始刪除,連續刪除一筆
+                                        }
+                                    });
+
+                                },
+                                editLogin: function (o) {
+                                    dlgmodel.id = o.id;
+                                    dlgmodel.password = o.password;
+                                    $("#dlg").dialog({
+                                        modal: true,
+                                        buttons: [
+                                            {
+                                                text: "OK",
+                                                click: function () {
+                                                    $.ajax("login_info?id=" + dlgmodel.id + "&password=" + dlgmodel.password, {
+                                                        type: "PUT",
+                                                        success: function (d) {
+                                                            o.id = dlgmodel.id;
+                                                            o.password = dlgmodel.password;
+                                                        }
+                                                    });
+                                                    $(this).dialog("close");
+                                                }
+                                            }
+                                        ]
+                                    });
                                 }
+
                             }
                         });
                     }
                 });
+
             });
-            
+            function addLogin() {
+                dlgmodel.id = "";
+                dlgmodel.password = "";
+                $("#dlg").dialog({
+                    modal: true,
+                    buttons: [
+                        {
+                            text: "OK",
+                            click: function () {
+                                $.ajax("login_info", {
+                                    type: "POST",
+                                    data: {
+                                        id: dlgmodel.id,
+                                        password: dlgmodel.password
+                                    },
+                                    success: function (d) {
+                                        model.logins.push({
+                                            id: dlgmodel.id,
+                                            password: dlgmodel.password
+                                        });
+                                    }
+                                });
+                                $(this).dialog("close");
+                            }
+                        }
+                    ]
+                });
+            }
+
         </script>
     </head>
     <body>
+        <button onclick="addLogin()">add</button>
         <table id="app" border="1">
             <thead>
                 <tr>
@@ -45,10 +113,16 @@
                     <td>{{index}}</td>
                     <td>{{login.id}}</td>
                     <td>{{login.password}}</td>
+                    <td><button v-on:click="editLogin(login)">Edit</button></td>
                     <td><button v-on:click="deleteLogin(index)">Delete</button></td>
-                    <td></td>
                 </tr>
             </tbody>
         </table>
+
+        <div id="dlg" style="display:none">
+            ID:<input type="text" v-model="id"/><br/>
+            Password:<input type="password"v-model="password"><br/>
+        </div>
+
     </body>
 </html>
