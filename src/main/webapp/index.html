@@ -3,15 +3,232 @@
     <head>
         <title>Start Page</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue"></script>
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
         <link href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+        <link rel="stylesheet" href="index.css">
+        <style>/* 40px */
+            .toTop-arrow {
+                width: 3.5rem;
+                height: 3.5rem;
+                padding: 0;
+                margin: 0;
+                border: 0;
+                border-radius: 33%;
+                opacity: 0.6;
+                background: #000;
+                cursor: pointer;
+                position:fixed;
+                right: 1rem;
+                bottom: 1rem;
+                display: none;
+            }
+            .toTop-arrow::before, .toTop-arrow::after {
+                width: 31px;
+                height: 7px;
+                border-radius: 3px;
+                background: #f90;
+                position: absolute;
+                content: "";
+            }
+            .toTop-arrow::before {
+                transform: rotate(-45deg) translate(0, -50%);
+                left: 0.4rem;
+            }
+            .toTop-arrow::after {
+                transform: rotate(45deg) translate(0, -50%);
+                right: 0.4rem;
+            }
+            .toTop-arrow:focus {outline: none;}
+        </style>
         <script>
+            var p_no = 1;
             var model = null;
             var dlgmodel = null;
-
+            var buylistmodel = null;
+            function commaSeparateNumber(val) {
+                while (/(\d+)(\d{3})/.test(val.toString())) {
+                    val = val.toString().replace(/(\d+)(\d{3})/, '$1' + ',' + '$2');
+                }
+                return val;
+            }
             $(document).ready(function () {
+                $('.mini-cart-button').click(function () {
+                    $('.mini-cart-container').toggleClass('mini-cart-open');
+                });
+                $('.plus').on('click', function (e) {
+                    var val = parseInt($(this).prev('input').val());
+                    $(this).prev('input').val(val + 1).change();
+                });
+                $('.minus').on('click', function (e) {
+                    var val = parseInt($(this).next('input').val());
+                    if (val !== 0) {
+                        $(this).next('input').val(val - 1).change();
+                    }
+                });
+                $('.add-to-cart-button').on('click', function (e) {
+                    var val = $(this).attr("rel");
+                    var price = $(this).attr('sel');
+                    var qty = $("input#text_" + val).val();
+                    var productName = $(this).attr('product');
+                    if ($(".mini-cart-items ul li#" + val).length)
+                    {
+                        var new_val = parseFloat($("span#price_" + val).text()) + (parseFloat(qty) * parseFloat(price));
+                        $("span#price_" + val).text(new_val.toFixed(2));
+                        var new_qty_val = parseInt($("span#qty_" + val).text()) + parseInt(qty);
+                        $("span#qty_" + val).text(new_qty_val);
+                    } else {
+                        $('.mini-cart-items ul').append('<li id="' + val + '">' + '<h3><span class=item-names>' + productName + '</span><br/>' + '<span class="item-prices" id="price_' + val + '">' + price + '<span>' + '</h3>' + '<span class="item-quantities" id="qty_' + val + '">' + qty + '</span>' + '</li>');
+                    }
+                    ;
+                    var totalPrice = 0.0;
+                    $(".item-prices").each(function ()
+                    {
+                        totalPrice += parseFloat($(this).text());
+                    });
+                    $('div#total-price > span').text(commaSeparateNumber(totalPrice.toFixed(2)));
+                    var totalQty = 0;
+                    $(".item-quantities").each(function () {
+                        totalQty += parseFloat($(this).text());
+                    });
+                    $('div#total-items > span').text(totalQty.toFixed(0));
+                    $('.succes-message').show(0).delay(1000).hide(0);
+                });
+                var navListItems = $('div.setup-panel div a'),
+                        allWells = $('.setup-content'),
+                        allNextBtn = $('.nextBtn');
+                allWells.hide();
+                navListItems.click(function (e) {
+                    e.preventDefault();
+                    var $target = $($(this).attr('href')),
+                            $item = $(this);
+                    if (!$item.hasClass('disabled')) {
+                        navListItems.removeClass('btn-primary').addClass('btn-default');
+                        $item.addClass('btn-primary');
+                        allWells.hide();
+                        $target.show();
+                        $target.find('input:eq(0)').focus();
+                    }
+                });
+                allNextBtn.click(function () {
+                    var curStep = $(this).closest(".setup-content"),
+                            curStepBtn = curStep.attr("id"),
+                            nextStepWizard = $('div.setup-panel div a[href="#' + curStepBtn + '"]').parent().next().children("a"),
+                            curInputs = curStep.find("input[type='text'],input[type='url']"),
+                            isValid = true;
+                    $(".form-group").removeClass("has-error");
+                    for (var i = 0; i < curInputs.length; i++) {
+                        if (!curInputs[i].validity.valid) {
+                            isValid = false;
+                            $(curInputs[i]).closest(".form-group").addClass("has-error");
+                        }
+                    }
+
+                    if (isValid)
+                        nextStepWizard.removeAttr('disabled').trigger('click');
+                });
+                $('div.setup-panel div a.btn-primary').trigger('click');
+
+
+            });
+            function order_list() {
+                var i = 0;
+                $("ul[id*=cart] li").each(function () {
+                    var name = $(this).find('span.item-names').text();
+                    var t_price = $(this).find('span.item-prices').text();
+                    var price_id = $(this).find("span.item-prices").attr("id");
+                    var q = $(this).find('span.item-quantities').text();
+                    var q_id = $(this).find('span.item-quantities').attr("id");
+                    var price = t_price/q;
+                    var order_html =
+                            '<li id=' + i + '><div class="form-group row"><label for="product" class="col-sm-3 col-form-label product">' + name + ' </label>' +
+                            '<div class="col-sm-6"><input type="text" class="form-control price  id=' + price_id + ' " value=" ' + price + '" style = "text-align: right; "readonly>' + '</div><div class="col-sm-3"><button onclick="del_item(' + i + ')"type="button" class="btn btn-danger" id="btn' + i + '"  style="float: right;"><i class="fas fa-trash-alt"></i></button></div></div>' +
+                            '<div class="form-group row">' + '<label for="Qty" class="col-sm-3 col-form-label Qty">購買數量 </label>' +
+                            '<div class="col-sm-9"><input type="text" class="form-control qty"   id=' + q_id + ' value='
+                            + q + '></div></div></li><hr>';
+                    $("#buy_list").append(order_html);
+
+                    i += 1;
+                });
+
+            }
+            function del_item(i) {
+                var a = "#" + i;
+                $(a).remove();
+            }
+            ;
+            function chk_sum() {
+                var total = 0;
+                $("ul[id*=buy_list] li").each(function () {     
+                    var p = $(this).find("input.price").attr("value");
+                    var qty_id = $(this).find("input.qty").attr("id");
+                    var q = parseInt($("input[id*="+qty_id+"]").val());
+
+                    total = total + (parseInt(p) * parseInt(q));
+                });
+                $("#sum_money").html(total);
+            }
+            ;
+            function Ins_buy_list() {
+                var name = $("#buyer_name").val();
+                var phone = $("#phone").val();
+                var add = $("#add").val();
+                var date = $("#date").val();
+                $("ul[id*=buy_list] li").each(function () {
+                    var i = $(this).find('label.product').text();
+                    var p = $(this).find('input.price').attr("value");
+                    var q = parseInt($("input[id*=qty]").val());
+                    $.ajax("buy_info", {
+                        type: "POST",
+                        data: {
+                            p_no: p_no,
+                            item: i,
+                            price: p,
+                            qty: q,
+                            buy_name: name,
+                            buy_phone: phone,
+                            buy_add: add,
+                            buy_date: date
+                        },
+                        success: function (d) {
+                            console.log(d);
+                        }
+                    });
+                    p_no = p_no + 1;
+                });
+
+            }
+            ;
+            function showlogin() {
+                $("#login").show();
+                $("#product-grid").hide();
+            }
+            ;
+            function checklogin() {
+                $.ajax("login_info?id=" + $("#inputID").val(), {
+                    success: function (data) {
+                        pw = $("#inputPassword").val();
+
+                        if (data.password == pw) {
+
+                            $("#login").hide();
+                            $("#product-grid").show();
+                        } else {
+                            alert("帳號或密碼錯誤!");
+                        }
+                    }
+
+                });
+            }
+            ;
+
+            //            新增會員
+            function addLogin() {
                 dlgmodel = new Vue({
                     el: "#dlg",
                     data: {
@@ -25,47 +242,10 @@
                             el: "#app",
                             data: {
                                 logins: data
-                            },
-                            methods: {
-                                deleteLogin: function (i) {
-                                    $.ajax("login_info?id=" + model.logins[i].id, {
-                                        type: "DELETE",
-                                        success: function (d) {
-                                            model.logins.splice(i, 1);//從第i個位置開始刪除,連續刪除一筆
-                                        }
-                                    });
-
-                                },
-                                editLogin: function (o) {
-                                    dlgmodel.id = o.id;
-                                    dlgmodel.password = o.password;
-                                    $("#dlg").dialog({
-                                        modal: true,
-                                        buttons: [
-                                            {
-                                                text: "OK",
-                                                click: function () {
-                                                    $.ajax("login_info?id=" + dlgmodel.id + "&password=" + dlgmodel.password, {
-                                                        type: "PUT",
-                                                        success: function (d) {
-                                                            o.id = dlgmodel.id;
-                                                            o.password = dlgmodel.password;
-                                                        }
-                                                    });
-                                                    $(this).dialog("close");
-                                                }
-                                            }
-                                        ]
-                                    });
-                                }
-
                             }
                         });
                     }
                 });
-
-            });
-            function addLogin() {
                 dlgmodel.id = "";
                 dlgmodel.password = "";
                 $("#dlg").dialog({
@@ -81,6 +261,7 @@
                                         password: dlgmodel.password
                                     },
                                     success: function (d) {
+                                        alert(d);
                                         model.logins.push({
                                             id: dlgmodel.id,
                                             password: dlgmodel.password
@@ -93,36 +274,327 @@
                     ]
                 });
             }
+            function empty_cart(){
+                $("#buy_list").empty();
+                $("#sum_money").empty();
+            };
 
         </script>
     </head>
     <body>
-        <button onclick="addLogin()">add</button>
-        <table id="app" border="1">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>ID</th>
-                    <th>Password</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(login,index) in logins">
-                    <td>{{index}}</td>
-                    <td>{{login.id}}</td>
-                    <td>{{login.password}}</td>
-                    <td><button v-on:click="editLogin(login)">Edit</button></td>
-                    <td><button v-on:click="deleteLogin(index)">Delete</button></td>
-                </tr>
-            </tbody>
-        </table>
+        <nav class="navbar navbar-expand-lg px-4">
+            <a class="navbar-brand" href="#"><img src="images/logo.png" alt=""></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#myNav">
+                <span class="toggler-icon"><i class="fas fa-bars"></i></span>
+            </button>
+            <div class="collapse navbar-collapse" id="myNav">
+                <ul class="navbar-nav mx-auto text-capitalize">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="index.html">首頁</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="order.html">查看訂單</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="addLogin()">
+                            <i class="fas fa-plus-circle"></i> 還不是會員嗎？現在就加入！
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-info-items d-none d-lg-flex ">
+                    <!-- single info -->
+                    <div class="nav-info align-items-center d-flex justify-content-between mx-lg-5">
+                        <span class="info-icon mx-lg-3"><i class="fas fa-phone"></i></span>
+                        <p class="mb-0">+ 123 456 789</p>
+                        <button class="btn " onclick="showlogin()"><span><i class="fa fa-user"></i>會員登入</span></button>
+                    </div>
+                    <!-- end of single info -->
+                    <!-- single info -->
+                    <div class="nav-info align-items-center d-flex justify-content-between mx-lg-5">
+                        <div class="mini-cart">
+                            <button class="btn btn-primary mini-cart-button" style="top: auto;">
+                                <span><i class="fa fa-shopping-cart"></i></span></button>
+                        </div>
+                    </div>
+                    <!-- Mini Cart Starts Here -->
 
-        <div id="dlg" style="display:none">
-            ID:<input type="text" v-model="id"/><br/>
-            Password:<input type="password"v-model="password"><br/>
+                    <div class="mini-cart-container">
+                        <div class="mini-cart-items">
+                            <ul id="cart">
+                            </ul>
+                            <div class="mini-cart-totals">
+                                <div id="total-price">
+                                    <p>總金額</p>
+                                    <span> $0.0 </span>
+                                </div>
+                                <div id="order">
+                                    <button  type="button" class="btn btn-success" data-toggle="modal" data-target="#exampleModal" onclick="order_list()" ><i class="fas fa-dollar-sign"></i>去買單</button>
+                                </div> 
+                                <div id="total-items">
+                                    <p><i class="fa fa-shopping-cart"></i>商品數量</p>
+                                    <span> 0 </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Mini Cart Ends Here -->  
+                    <!-- end of single info -->
+                </div>
+            </div>
+        </nav>
+        <div class="container ">    
+            <div id ="login"style="display:none" >
+                <div class="container">
+                    <div class="row">
+                        <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+                            <div class="card card-signin my-5">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">Sign In</h5>
+                                    <form class="form-signin">
+                                        <div class="form-label-group">
+                                            <input type="text" id="inputID" class="form-control"  required autofocus>
+                                            <label for="inputID">會員帳號</label>
+                                        </div>
+                                        <div class="form-label-group">
+                                            <input type="password" id="inputPassword" class="form-control" required>
+                                            <label for="inputPassword">密碼</label>
+                                        </div>
+
+                                        <div class="custom-control custom-checkbox mb-3">
+                                            <input type="checkbox" class="custom-control-input" id="customCheck1">
+                                            <label class="custom-control-label" for="customCheck1">Remember password</label>
+                                        </div>
+                                        <button class="btn btn-lg btn-primary btn-block text-uppercase" onclick="checklogin()">會員登入</button>
+                                        <hr class="my-4">
+                                        <!--新增會員鈕-->
+
+
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="row product-grid" id="product-grid">
+                <!-- START The Product Item -->
+                <div class="col-md-4 col-sm-4 grid-item card">
+                    <img class="card-img-top"  src="images/menu/menu-img-1.jpg" alt="" />
+                    <div class="card-body">
+                        <h1 class="card-title">蔬食沙拉</h1>
+                        <p class="card-text">採用新鮮生菜與番茄為食材，真材實料，搭配清爽和風醬，營養均衡。</p>
+                        <h3 class="card-text">$100</h3>
+                        <div class="quantity-input">
+                            <input class="minus btn" type="button" value="-">
+                            <input id="text_salad" value="1" class="input-text qty text" size="4"/>
+                            <input class="plus btn" type="button" value="+">
+                        </div>
+                        <button class="btn btn-success add-to-cart-button" rel="salad" product="蔬食沙拉" sel="100.0" ><i class="fas fa-cart-plus"></i> 加入購物車</button>
+                    </div>
+                </div>
+                <!-- END!! The Product Item -->
+                <!-- START The Product Item -->
+                <div class="col-md-4 col-sm-4 grid-item card">
+                    <img class="card-img-top"  src="images/menu/menu-img-2.jpg" alt="" />
+                    <div class="card-body">
+                        <h1 class="card-title">厚切牛肉堡</h1>
+                        <p class="card-text">肉食主義最愛，火烤牛肉片與起司片巧妙搭配，再淋上鹹甜開胃的BBQ醬，交疊出獨特風味。</p>
+                        <h3 class="card-text">$500</h3>
+                        <div class="quantity-input">
+                            <input class="minus btn" type="button" value="-">
+                            <input id="text_cow_bur" value="1" class="input-text qty text" size="4"/>
+                            <input class="plus btn" type="button" value="+">
+                        </div>
+                        <button class="btn btn-success add-to-cart-button" rel="cow_bur" product="厚切牛肉堡" sel="500.0" ><i class="fas fa-cart-plus"></i> 加入購物車</button>
+                    </div>
+                </div>
+                <!-- END!! The Product Item -->
+                <!-- START The Product Item -->
+                <div class="col-md-4 col-sm-4 grid-item card">
+                    <img class="card-img-top"  src="images/menu/menu-img-3.jpg" alt="" />
+                    <div class="card-body">
+                        <h1 class="card-title">超級魚排堡</h1>
+                        <p class="card-text">精選阿拉斯加鱈魚，炸至表面金黃酥脆，搭配濃郁起士和塔塔醬，鮮嫩可口，營養豐富。</p>
+                        <h3 class="card-text">$200</h3>
+                        <div class="quantity-input">
+                            <input class="minus btn" type="button" value="-">
+                            <input id="text_fish_bur" value="1" class="input-text qty text" size="4"/>
+                            <input class="plus btn" type="button" value="+">
+                        </div>
+                        <button class="btn btn-success add-to-cart-button" rel="fish_bur" product="超級魚排堡" sel="200.0" ><i class="fas fa-cart-plus"></i> 加入購物車</button>
+                    </div>
+                </div>
+                <!-- END!! The Product Item -->
+                <!-- START The Product Item -->
+                <div class="col-md-4 col-sm-4 grid-item card">
+                    <img class="card-img-top"  src="images/menu/menu-img-4.jpg" alt="" />
+                    <div class="card-body">
+                        <h1 class="card-title">金黃脆薯</h1>
+                        <p class="card-text">精選優質薯條，金黃色澤，外脆內酥！</p>
+                        <h3 class="card-text">$90</h3>
+                        <div class="quantity-input">
+                            <input class="minus btn" type="button" value="-">
+                            <input id="text_fries" value="1" class="input-text qty text" size="4"/>
+                            <input class="plus btn" type="button" value="+">
+                        </div>
+                        <button class="btn btn-success add-to-cart-button" rel="fries" product="金黃脆薯" sel="90.0" ><i class="fas fa-cart-plus"></i> 加入購物車</button>
+                    </div>
+                </div>
+                <!-- END!! The Product Item -->
+                <!-- START The Product Item -->
+                <div class="col-md-4 col-sm-4 grid-item card">
+                    <img class="card-img-top"  src="images/menu/menu-img-5.png" alt="" />
+                    <div class="card-body">
+                        <h1 class="card-title">金黃雞塊</h1>
+                        <p class="card-text">嚴選國產雞肉，搭配獨家秘方，精密控制火候，鎖住肉汁與香氣，外層金黃酥脆，內在鮮嫩多汁。</p>
+                        <h3 class="card-text">$250</h3>
+                        <div class="quantity-input">
+                            <input class="minus btn" type="button" value="-">
+                            <input id="text_chicken" value="1" class="input-text qty text" size="4"/>
+                            <input class="plus btn" type="button" value="+">
+                        </div>
+                        <button class="btn btn-success add-to-cart-button" rel="chicken" product="金黃雞塊" sel="250.0" ><i class="fas fa-cart-plus"></i> 加入購物車</button>
+                    </div>
+                </div>
+                <!-- END!! The Product Item -->
+                <!-- START The Product Item -->
+                <div class="col-md-4 col-sm-4 grid-item card">
+                    <img class="card-img-top"  src="images/menu/menu-img-6.png" alt="" />
+                    <div class="card-body">
+                        <h1 class="card-title">香醇拿鐵</h1>
+                        <p class="card-text">濃縮咖啡搭配優質鮮奶，點亮一天的生活。</p>
+                        <h3 class="card-text">$50</h3>
+                        <div class="quantity-input">
+                            <input class="minus btn" type="button" value="-">
+                            <input id="text_cafe" value="1" class="input-text qty text" size="4"/>
+                            <input class="plus btn" type="button" value="+">
+                        </div>
+                        <button class="btn btn-success add-to-cart-button" rel="cafe" product="香醇拿鐵" sel="50.0" ><i class="fas fa-cart-plus"></i> 加入購物車</button>
+                    </div>
+                </div>
+                <!-- END!! The Product Item -->
+                <div class="succes-message"><i class="far fa-check-circle fa-2x" style="color:lime"></i><br>成功加入購物車!</div>
+
+            </div>
+            <button type="button" id="BackTop" class="toTop-arrow"></button>
+            <script>
+                $(function () {
+                    $('#BackTop').click(function () {
+                        $('html,body').animate({scrollTop: 0}, 333);
+                    });
+                    $(window).scroll(function () {
+                        if ($(this).scrollTop() > 300) {
+                            $('#BackTop').fadeIn(222);
+                        } else {
+                            $('#BackTop').stop().fadeOut(222);
+                        }
+                    }).scroll();
+                });
+            </script>
         </div>
 
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="order_list">
+                            <div class="container">
+                                <div class="stepwizard">
+                                    <div class="stepwizard-row setup-panel">
+                                        <div class="stepwizard-step">
+                                            <a href="#step-1" type="button" class="btn btn-primary btn-circle">1</a>
+                                            <p>訂單資訊</p>
+                                        </div>
+                                        <div class="stepwizard-step">
+                                            <a href="#step-2" type="button" class="btn btn-default btn-circle" disabled="disabled">2</a>
+                                            <p>購買人資料</p>
+                                        </div>
+                                        <div class="stepwizard-step">
+                                            <a href="#step-3" type="button" class="btn btn-default btn-circle" disabled="disabled">3</a>
+                                            <p>訂購成功</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form role="form">
+                                    <div class="row setup-content" id="step-1">
+                                        <div class="col-md-12">
+                                            <h3> 訂單資訊</h3>
+                                            <ul id="buy_list">
+                                            </ul>
+                                            <div id="sum" style="text-align:right">
+                                                <h5>總金額</h5>
+                                                <p id="sum_money"></p>
+                                            </div>
+                                            <button class="btn btn-primary nextBtn btn-lg pull-right" type="button" >下一步</button>
+                                            <button type="submit" class="btn btn-warning btn-lg" onclick="chk_sum()"  >確認金額</button>
+                                        </div>
+
+                                    </div>
+                                    <div class="row setup-content" id="step-2">
+                                        <div class="col-md-12">
+                                            <h3>購買人資料</h3>
+                                            <ul id="buyer">
+                                                <li class="form-group">
+                                                    <label class="control-label">訂購人姓名</label>
+                                                    <input maxlength="20" type="text" required="required" class="form-control" id="buyer_name" placeholder="請輸入您的姓名..."/>
+                                                </li>
+                                                <li class="form-group">
+                                                    <label class="control-label">聯絡電話</label>
+                                                    <input type="tel" required="required" class="form-control" id="phone" placeholder="請輸入您的電話..."  />
+                                                </li>
+                                                <li class="form-group">
+                                                    <label class="control-label">地址</label>
+                                                    <input maxlength="200" type="text" required="required" class="form-control" id="add" placeholder="請輸入您的地址..."  />
+                                                </li>
+                                                <li class="form-group">
+                                                    <label class="control-label">訂購日期</label>
+                                                    <input maxlength="200" type="date" required="required" id="date" class="form-control" />
+                                                </li>
+                                            </ul>
+                                            <button class="btn btn-primary nextBtn btn-lg pull-right"  type="button" >下一步</button>
+                                        </div>
+                                    </div>
+                                    <div class="row setup-content" id="step-3">
+                                        <div class="col-xs-12">
+                                            <div class="col-md-12">
+                                                <h3> Step 3</h3>
+                                                <button class="btn btn-success btn-lg pull-right" onclick="Ins_buy_list()"type="submit">訂購完成!</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="empty_cart()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div id="dlg" style="display:none">
+            ID:<br/>
+            <input type="text" v-model="id"/><br/>
+            Password:<br/>
+            <input type="password"v-model="password"><br/>
+        </div>
+
+        <!--<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
     </body>
 </html>

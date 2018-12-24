@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Start Page</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+        <link href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+        <link rel="stylesheet" href="index.css">
+        <script>
+            var model = null;
+            var dlgmodel = null;
+            $(document).ready(function () {
+                dlgmodel = new Vue({
+                    el: "#dlg",
+                    data: {
+                        no: "",
+                        name: "",
+                        add: "",
+                        phone: "",
+                        date: ""
+                    }
+                });
+                $.ajax("buys", {
+                    success: function (data) {
+                        model = new Vue({
+                            el: "#app",
+                            data: {
+                                buys: data
+                            },
+                            methods: {
+                                deleteLogin: function (i) {
+                                    $.ajax("buy_info?p_no=" + model.buys[i].p_no, {
+                                        type: "DELETE",
+                                        success: function (d) {
+                                            model.buys.splice(i, 1);//從第i個位置開始刪除,連續刪除一筆
+                                        }
+                                    });
+                                },
+                                editLogin: function (o) {
+                                    dlgmodel.no = o.p_no;
+                                    dlgmodel.name = o.buy_name;
+                                    dlgmodel.add = o.buy_add;
+                                    dlgmodel.phone = o.buy_phone;
+                                    dlgmodel.date = o.buy_date;
+                                    $("#dlg").dialog({
+                                        modal: true,
+                                        buttons: [
+                                            {
+                                                text: "OK",
+                                                click: function () {
+                                                    $.ajax("buy_info?p_no= '" + o.p_no + " '&buy_name=" + dlgmodel.name
+                                                            + "&buy_add=" + dlgmodel.add + "&buy_phone=" + dlgmodel.phone
+                                                            + "&buy_date=" + dlgmodel.date, {
+                                                                type: "PUT",
+                                                                success: function (d) {
+                                                                    console.log(d);
+                                                                    o.buy_name = dlgmodel.name;
+                                                                    o.buy_add = dlgmodel.add;
+                                                                    o.buy_phone = dlgmodel.phone;
+                                                                    o.buy_date = dlgmodel.date;
+                                                                }
+                                                            });
+                                                    $(this).dialog("close");
+                                                }
+                                            }
+                                        ]
+                                    });
+                                }
+
+                            }
+                        });
+                    }
+                });
+            });
+            function addLogin() {
+                dlgmodel.id = "";
+                dlgmodel.password = "";
+                $("#dlg").dialog({
+                    modal: true,
+                    buttons: [
+                        {
+                            text: "OK",
+                            click: function () {
+                                $.ajax("login_info", {
+                                    type: "POST",
+                                    data: {
+                                        id: dlgmodel.id,
+                                        password: dlgmodel.password
+                                    },
+                                    success: function (d) {
+                                        model.logins.push({
+                                            id: dlgmodel.id,
+                                            password: dlgmodel.password
+                                        });
+                                    }
+                                });
+                                $(this).dialog("close");
+                            }
+                        }
+                    ]
+                });
+            }
+        </script>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg px-4">
+            <a class="navbar-brand" href="#"><img src="images/logo.png" alt=""></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#myNav">
+                <span class="toggler-icon"><i class="fas fa-bars"></i></span>
+            </button>
+            <div class="collapse navbar-collapse" id="myNav">
+                <ul class="navbar-nav mx-auto text-capitalize">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="index.html">首頁</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="order.html">查看訂單</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">聯絡我們</a>
+                    </li>
+                </ul>
+                <div class="nav-info-items d-none d-lg-flex ">
+                    <!-- single info -->
+                    <div class="nav-info align-items-center d-flex justify-content-between mx-lg-5">
+                        <span class="info-icon mx-lg-3"><i class="fas fa-phone"></i></span>
+                        <p class="mb-0">+ 123 456 789</p>
+                    </div>
+                    <!-- end of single info -->
+                    <!-- single info -->
+                    <div id="cart-info" class="nav-info align-items-center cart-info d-flex justify-content-between mx-lg-5">
+                        <span class="cart-info__icon mr-lg-3"><i class="fas fa-shopping-cart"></i></span>
+                        <p class="mb-0 text-capitalize"><span id="item-count"> </p>
+                    </div>
+                    <!-- end of single info -->
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="jumbotron jumbotron-fluid" style="background-image: url('images/overlay-pattern.png')">
+                        <div class="container">
+                            <h1 class="display-4">歡迎光臨</h1>
+                            <img src='images/cooker-img.png' style='float: right;'/>
+                            <p class="lead">親愛的客戶非常感謝您的訂購！</p>
+                        </div>
+                    </div>
+                    <table class="table table-striped" id="app" border="1">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col">品項</th>
+                                <th scope="col">單價</th>
+                                <th scope="col">訂購數量</th>
+                                <th scope="col">訂購人姓名</th>
+                                <th scope="col">送貨地址</th>
+                                <th scope="col">訂購人電話</th>
+                                <th scope="col">送貨日期</th>
+                                <th scope="col">修改聯絡人資訊</th>
+                                <th scope="col">取消訂單</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(buy,index) in buys">
+                                <th scope="row">{{index+1}}</th>
+                                <td>{{buy.item}}</td>
+                                <td>{{buy.price}}</td>
+                                <td>{{buy.qty}}</td>
+                                <td>{{buy.buy_name}}</td>
+                                <td>{{buy.buy_add}}</td>
+                                <td>{{buy.buy_phone}}</td>
+                                <td>{{buy.buy_date}}</td>
+                                <td><button v-on:click="editLogin(buy)">Edit</button></td>
+                                <td><button v-on:click="deleteLogin(index)">Delete</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+        <div id="dlg" style="display:none">
+            訂單編號:<input type="text" v-model= "no" readonly/><br/>
+            訂購人姓名:<input type="text" v-model= "name"/><br/>
+            送貨地址:<input type="text" v-model= "add"/><br/>
+            訂購人電話:<input type="tel" v-model= "phone"/><br/>
+            送貨日期:<input type="date" v-model= "date"/><br/>
+        </div>
+
+        <!--<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+    </body>
+</html>
